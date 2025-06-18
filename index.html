@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dragoste și Șmecherie: Evoluția Manelelor</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@700&family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+    
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    
+    <style>
+        :root {
+            --bg-color: #FFF1CC;
+            --text-color: #000000;
+        }
+        body.popup-open {
+            overflow: hidden;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; }
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Roboto', sans-serif;
+            line-height: 1.6;
+            position: relative; /* Needed for absolute positioning */
+        }
+
+        #intro-screen {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: center;
+            text-align: center;
+            padding: 5vh 1rem 1rem;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            background-color: var(--bg-color);
+        }
+
+        .title-container { max-width: 800px; }
+        .supratitle {
+            font-family: 'Roboto', sans-serif;
+            font-weight: 700;
+            font-size: 1rem;
+            background-color: white;
+            padding: 5px 10px;
+            display: inline-block;
+            border-radius: 4px;
+            margin-bottom: 15px;
+        }
+        .title { font-family: 'Roboto', sans-serif; font-weight: 300; font-size: 2rem; line-height: 1.2; }
+        .intro-text {
+            max-width: 500px;
+            margin: 2rem 1rem 1.5rem; /* Adjusted margin */
+            font-size: 1rem;
+            line-height: 1.3;
+        }
+        
+        .intro-btn {
+            background-color: #000;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: bold;
+            margin-bottom: 5rem; /* Space between button and vinyl */
+            transition: background-color 0.2s;
+        }
+        .intro-btn:hover {
+            background-color: #333;
+        }
+
+        .play-prompt { font-size: 0.9rem; font-weight: 400; margin-top: 1rem; }
+        #vinyl-container {
+            position: relative;
+            width: 65vw;
+            max-width: 400px;
+            aspect-ratio: 1 / 1;
+        }
+        
+        #head-img, #disk-pivot {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+        }
+        
+        #donut-chart {
+            position: absolute;
+            width: 150%; 
+            height: 150%;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 15;
+        }
+
+        #disk-pivot { z-index: 10; transform-origin: 60% 36%; } 
+        #disk-img { width: 100%; height: 100%; display: block; }
+        #head-img { z-index: 5; pointer-events: none; } 
+        
+        .arc path {
+            stroke: #ffffff00;
+            stroke-width: 2px;
+            cursor: pointer;
+            transition: opacity 0.3s ease, d 0.05s linear;
+        }
+        .arc:hover path { opacity: 0.8; }
+        .arc text {
+            font-family: 'Roboto', sans-serif;
+            font-size: clamp(12px, 3vw, 18px);
+            font-weight: bold;
+            fill: var(--text-color);
+            pointer-events: none;
+        }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .is-playing #disk-pivot { animation: spin 4s linear infinite; }
+        
+        #player-section {
+            position: fixed; bottom: 2vh; left: 0;
+            width: 100%; display: flex; justify-content: center; z-index: 20;
+            opacity: 0;
+            transform: translateY(100%);
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            pointer-events: none;
+        }
+        #player-section.is-active {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: auto;
+        }
+
+        #lyrics-container {
+            position: relative; background-color: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(5px); padding: 10px 20px; border-radius: 20px;
+            min-width: 300px; max-width: 80%; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        #lyric-line {
+            font-family: 'Roboto Slab', serif; font-size: 1.2rem;
+            font-weight: 700; color: var(--text-color); white-space: pre;
+        }
+        #karaoke-ball {
+            position: absolute; bottom: -15px; left: 0;
+            width: 12px; height: 12px; background-color: #e53935;
+            border-radius: 50%; transform: translateX(-50%);
+            opacity: 0; transition: opacity 0.3s ease, left 0.1s linear;
+        }
+
+        #scrolly-content {
+            display: none;
+        }
+        
+        .chapter-container h2 {
+            font-family: 'Roboto Slab', serif; font-size: 2.5rem; margin-bottom: 1rem;
+        }
+        
+        #controls-container {
+            position: absolute; /* Position is set by JS */
+            z-index: 100;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+            transform: translate(-50%, -50%); /* Center the container on the coords */
+            display: flex;
+            gap: 8px; /* Space between buttons */
+            background-color: #333;
+            color: #fff;
+            border-radius: 25px;
+            padding: 5px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        #controls-container.is-visible {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .control-button {
+            background-color: transparent;
+            color: #fff;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .control-button:hover {
+            background-color: #555;
+        }
+        
+        #play-pause-button {
+            width: 40px; /* Make it a circle */
+            height: 40px;
+            padding: 0;
+        }
+        .play-icon, .pause-icon {
+            width: 18px;
+            height: 18px;
+            fill: currentColor;
+        }
+        .pause-icon { display: none; }
+        #controls-container.is-playing .play-icon { display: none; }
+        #controls-container.is-playing .pause-icon { display: block; }
+
+
+        #chapter-popup {
+            position: fixed; top: 0; left: 0;
+            width: 100%; height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(5px);
+            z-index: 1000;
+            display: flex; justify-content: center; align-items: center;
+            opacity: 0; pointer-events: none;
+            transition: opacity 0.3s ease-in-out;
+        }
+        #chapter-popup.is-visible {
+            opacity: 1; pointer-events: auto;
+        }
+        .popup-content {
+            background-color: #fff; width: 90%; max-width: 800px;
+            height: 90vh; border-radius: 15px; padding: 2rem 3rem;
+            overflow-y: auto; position: relative;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        .popup-close-button {
+            position: absolute; top: 15px; right: 25px;
+            font-size: 2.5rem; font-weight: bold; color: #888;
+            cursor: pointer; line-height: 1;
+        }
+        .popup-close-button:hover { color: #000; }
+
+        #bubble-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none; 
+            z-index: 90; 
+            overflow: hidden;
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out;
+        }
+        #bubble-container.is-active {
+            opacity: 1;
+        }
+
+        .word-bubble {
+            position: absolute;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 300; 
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.7);
+            border-radius: 50%;
+            top: -20%;
+            animation-name: fall;
+            animation-timing-function: linear;
+            animation-iteration-count: infinite;
+            will-change: transform;
+        }
+
+        @keyframes fall {
+            to {
+                transform: translateY(120vh);
+            }
+        }
+
+    </style>
+</head>
+<body>
+
+    <section id="intro-screen">
+        <div class="title-container">
+            <p class="supratitle">Dragoste și șmecherie</p>
+            <h1 class="title">Cum au evoluat manelele în România și cum au (re)devenit un fenomen social</h1>
+        </div>
+        <p class="intro-text">
+            Acesta este un material vizual și interactiv despre evoluția manelelor. Fiecare secțiune a discului de mai jos reprezintă un capitol muzical. Apasă pe oricare dintre ele pentru a asculta și a explora povestea.
+        </p>
+        
+        <button id="intro-button" class="intro-btn">Introducere și explicații</button>
+        
+        <div id="vinyl-container">
+            <div id="disk-pivot">
+                <img id="disk-img" src="disk0.png" alt="Rotating Disk">
+            </div>
+            <img id="head-img" src="head0.png" alt="Profile of a person">
+            <svg id="donut-chart"></svg>
+        </div>
+        <p class="play-prompt">Joacă-te cu muzica.</p>
+    </section>
+
+    <div id="bubble-container"></div>
+
+    <div id="player-section">
+        <audio id="chapter-audio" style="display: none;" crossorigin="anonymous"></audio>
+        <div id="lyrics-container">
+            <div id="karaoke-ball"></div>
+            <p id="lyric-line"> </p>
+        </div>
+    </div>
+
+    <main id="scrolly-content">
+        <div class="chapter-container" id="intro-content">
+            <h2>Introducere și explicații</h2>
+            <p>„Manele, manele, păi ce aveți cu ele?/ Ăștia suntem, bro….” - spunea Spike într-o piesă lansată în 2018, în care parodia elitismul și superioritatea celor care se declarau împotriva acestui curent muzical. 
+
+Spike avea dreptate. Manelele nu au dispărut niciodată din România. 
+
+Sigur că au fost perioade în care fie au zburat sub radar, fie au fost preferate doar de anumite categorii sociale. În perioadele în care rasismul din societate s-a pronunțat mai apăsat, nu au mai fost nici pe placul celor care le-au promovat inițial.
+
+Dar au avut și ani de glorie, în care au explodat în mainstream, după ce au reușit să se lipească, din punct de vedere al compoziției, de genuri cunoscute și acceptate mai bine din punct de vedere social și cultural.
+
+Manelele au fost mereu parte din cultura de consum muzical a românilor. Nu doar că au reușit să nu dispară, dar au și evoluat, s-au adaptat extrem de bine la era digitală și la cultura internetului.
+
+În zilele noastre, maneaua românească s-a globalizat puternic. Și va continua să o facă, cel mai probabil, și în următorii ani.
+</p>
+            <p><strong>Cum funcționează:</strong></p>
+            <ul>
+                <li><strong>Apasă pe un segment</strong> pentru a asculta o melodie reprezentativă pentru acea perioadă.</li>
+                <li>După ce ai selectat un capitol, vor apărea butoanele de control.</li>
+                <li>Folosește butonul <strong>Play/Pauză</strong> pentru a controla muzica.</li>
+                <li>Apasă pe <strong>"Mergi la capitol"</strong> pentru a citi textul informativ corespunzător. Muzica se va opri automat.</li>
+                <li><strong>Capitolul "Protomaneaua"</strong> are o surpriză vizuală: temele cheie din versuri vor pluti pe ecran!</li>
+            </ul>
+            <p>Materialul este conceput ca o experiență interactivă, combinând elemente audio, vizuale și text pentru a spune o poveste culturală complexă. Sperăm să vă placă!</p>
+        </div>
+        <div class="chapter-container" id="chapter-1"><h2>Protomaneaua</h2><p>„Manelele sunt de două feluri: de dragoste și de șmecherie”, îmi spune Adrian Șchiop, scriitor și doctor în manele (și-a susținut doctoratul în manele în 2014, la SNSPA București).
+
+Înainte de comunism, erau 3 trupe care dominau stilul muzical ce avea să fie cunoscut mai târziu drept manele. Azur, Odeon și Generic. Erau formații care defilau cu versuri cuminți, care nu deranjau și nici nu instigau, deși reușeau, subtil, să atingă multe dintre nemulțumirile vremurilor. 
+
+Din punct de vedere muzical, existau puternice influențe balcanice, începând cu cele grecești. 
+
+Caseta Wikipedia zice așa: Formația Generic a rămas underground până în 1990 deoarece regimul comunist nu tolera genul de muzică cântată, debutând public în același an cu albumul „Raza de soare”. Albumul a fost înregistrat în 1987 și a fost disponibil sub formă de casete audio, imprimarea la casa de discuri Electrecord fiind interzisă din cauza regimului comunist.[5] În 1989, albumul a fost imprimat, fiind disponibil doar pentru prietenii formației, totuși, formația debutează oficial în 1990 cu acest album, devenind un succes, conținând melodii cântate de trupă în anii precedenți.[4] Albumul avea să vândă 700.000 de exemplare.[6]
+
+Spre sfârșitul anilor 80, începuseră să se acutizeze și nemulțumirile la adresa sistemului și, ici-colo, apăreau câteva semne de rebeliune față de regulile societății de atunci.
+
+Cea mai obraznică piesă din acea vreme rămâne, în opinia lui Adrian Șchiop, „Frate, frate, frățiorul meu”. El spune că era „maximul ce putea fi spus despre o presupusă infracționalitate a acelor vremuri”.
+
+Versurile prindeau tocmai pentru că „românii deja nu mai credeau în comunism în anii 80, nu se mai ascundeau, aveau nevoie să li se cânte și altceva”, punctează el.
+
+După căderea comunismului, manelele intră într-o nouă eră, cea în care nu mai exista cenzură. Inerțial, melodiile se păstrează în aceeași linie, dar se pune tot mai tare accent pe versuri care vorbesc despre fărădelegi.
+
+E principalul motiv pentru genul muzical devine preferatul „bișnițarilor și al interlopilor”.
+
+Stilul își găsește singur și un nume: „muzică vagabonțească” - Florin Mitroi, Doru Calotă sunt nume cunoscute din acea perioadă, iar unul dintre cele mai cunoscute hituri de atunci - „Drobeta, Drobeta”, e reinterpretat chiar și până în zilele noastre.
+
+Doar că acest fenomen durează doar câțiva ani și e prezent, de obicei, doar în straturile din societate ferite de lumina reflectoarelor. Artiștii de acest fel au reușit să „treacă pe sub radar”, dar apoi, odată luați în vizor, ei sunt nevoiți să-și recalibreze discursul și să „o lase mai moale cu fărădelegile”, punctează scriitorul.
+
+Maneaua începe să se împletească, sub diferite forme, cu un alt gen muzical considerat de ghetou, dar importat din cultura americană: hiphop-ul, care a luat naștere prin 93-94. Una dintre piesele care îmbină ambele stiluri muzicale și are succes la vremea este Verdikt - Vine Poliția.
+
+Pe mai departe, după cum arată Adrian Șchiop în acest articol, doar unul dintre genuri ajungea, până la un anumit punct, să fie acceptat de elita intelectuală. 
+
+Manelele nu dispar, însă, dar se reinventează. Se plusează și pe alte direcții, precum „pornografie și misoginism”, fenomen întreținut pe parcurs de trupe precum Play AJ și alți artiști adunați în jurul lor. Abordarea lirică de acest fel își atinge apogeul după anii 2000, cu piesa „4 nopți și 4 zile”.
+
+Tot în primii ani de după Revoluție explodează și trupe ca Albatros, care devine o trupă de petrecere de restaurant, cu versuri mult mai curate decât celălalt val menționat. Ambele valuri rămân, însă, underground. 
+
+O bună perioadă, manelele acelor vremuri au fost cântate doar la petreceri private, iar în spațiul public se auzeau doar în piețe, la tarabe, în discoteci din mediul rural, dar casetele nu se vindeau în magazinele de specialitate. 
+
+Până spre finalul anilor 90, când își face intrarea în scenă un nou stil: etno-hiphop. Din punct de vedere muzical, era mult mai elaborat decât ce propuneau cei de la Verdikt, se foloseau sintetizatoare și totul suna foarte pop. 
+
+Atunci, manelele se bucură de prima apariție cu adevărat mainstream, sunt acceptate de o mai mare parte din societate, iar acest lucru i se datorează lui Costi Ioniță. El vine cu acest upgrade muzical, iar una dintre primele trupe care se bucură de acest succes este Gashka. Mai târziu, apare și LA, care domină curentul mainstream.
+
+E pentru prima dată când maneaua iese din zona cumetriilor (nunți, botezuri, petreceri private) și a discotecilor de țară și ajunge nu doar în discotecile studențești de la orașe, ci și la radio și televizor.
+
+Tot în acea perioadă, între 1998 și câțiva ani după 2000, televiziunile mari din România încep să promoveze în prime time și la petrecerile de Revelion nume ca Adrian Minune, Vali Vijelie și alții, care cântau de ceva ani, dar nu prinseseră lumina reflectoarelor. 
+
+Nu durează mult, pentru că, ulterior, se intră iar într-o perioadă de „ghetoizare”, după cum îi spune Adi Șchiop, dar această perioadă ajută, culmea, la profesionalizarea industriei de manele din România.
+
+După 2004, când apare internetul, deși industria muzicală mainstream e puternic lovită de piraterie, manelele se reinventează și, pentru că există bani din cântări, sunt printre primele genuri muzicale din România care profită din plin de apariția muzicii în format mp3.
+
+E o perioadă în care, din nou, manelele sunt evitate de zona comercială, dar ele rămân expuse publicului prin alte metode. 
+
+„Nu se bazau pe vânzarea de albume, în 2005-2006 apăreau cd-uri cu manele cu 200 de piese în format mp3. Erau scoase la case de producție, nu erau piratate, dar erau scoase pe bandă rulantă”, susține scriitorul.
+
+„Nu mi se pare că războiul cultural în jurul manelelor mai are în 2025 la fel de mulți cruciați și apostoli precum avea la începutul anilor 2000. Panica morală asociată cu manelele, încapsulată în celebra emisiune de pe B1TV cu George Pruteanu și Adrian Minune, mai iese la suprafață din când în când (să ne amintim, de pildă, de scandalul de la Filarmonica din Timișoara de acum 3 ani), însă intensitatea cu care aceasta se manifestă este, în opinia mea, semnificativ mai scăzută” - Radu Uszkai, cercetător la Centrul de Cercetare în Etică Aplicată, Universitatea din București,  asistent universitar în cadrul Departamentului de Filosofie și Științe Socio-umane al Academiei de Studii Economice
+</p></div>
+        <div class="chapter-container" id="chapter-2"><h2>Fenomenul Florin Salam</h2><p>În 2002-2003 devine cunoscut și Florin Salam, unul dintre cei mai cunoscuți cântăreți de manele din ziua de azi, cel supranumit Regele.
+
+Cânta pe la petreceri private încă de pe la sfârșitul anilor 90, cu numele de scenă Florin Fermecătoru’, dar nu are succes o bună perioadă de timp pentru că e eclipsat de cei care erau atunci pe val: Adrian Minune, Nicolae Guță, Vali Vijelie și alții. În plus, faptul că-și face apariția într-o perioadă în care manelele nu sunt în lumina reflectoarelor nu-l ajută. 
+
+2009, însă, e anul în care Florin Salam are expunere la televizor, pentru că o tragedie din familia sa - moartea soției - devine subiect de tabloid și e un subiect care atrage atenția și televiziunilor de știri. 
+
+Doi ani mai târziu, scoate hitul „Zâna Zânelor” și reușește încă un upgrade la ceea ce înseamnă maneaua în România.
+
+„Ce a reușit el să facă atunci a fost să combine ritmul reggaeton, acest curent sud-american, cu maneaua, s-au pupat foarte bine, pentru că ritmurile sunt asemănătoare. Rezultă o manea pe steroizi, pe amfetamine”, spune Șchiop.
+
+„Senzația mea e că Florin Salam e primul star de manele din România. Manelele după el sună cu totul altfel decât înainte de apariția lui” - Adi Șchiop. 
+</p></div>
+        <div class="chapter-container" id="chapter-3"><h2>Pandemia, marele moment de cotitură</h2><p>Atunci când a venit pandemia și consumul din online a crescut enorm, manelele au explodat pur și simplu și au început să apară în toate topurile de trending de pe YouTube sau de pe alte platforme.
+
+Perioada de ghetoizare, așa cum o numea scriitorul, avea să se încheie, dar ea a fost utilă pentru mulți artiști. I-a ajutat să învețe cum stă treaba cu internetul și să se promoveze acolo. Nu aveau de ales, pentru că erau evitați de mediile mainstream și erau forțați să reziste, sub o formă sau alta.
+
+Au investit mai mulți bani în producție, clipurile au început să arate mai bine, iar prezența din online a fost aliniată la estetica de tip glam. Pandemia i-a prins foarte pregătiți și i-a propulsat.
+
+ „Au apărut noi label-uri, precum Manele Mentolate, care gândesc întregul concept, clipurile sunt mult mai lucrate, piesele sună mai cool, au avut colaborări cu nume mari din showbiz-ul pop, precum  Alex Velea”, afirmă Șchiop.
+
+Succesul pe internet, chiar dacă a venit mai târziu, a venit fix la momentul oportun.
+
+Un rol important în procesul acesta l-a avut, cu siguranță, evoluția tehnologică. Media clasică (radio și TV cu precădere) s-a erijat multă vreme în rolul de gardian sau paznic al culturii, însă în ultima perioadă a pierdut lupta pentru supremația culturală cu rețelele sociale și platformele de streaming. Pe YouTube sau Spotify, maneaua este (cu scuzele de rigoare pentru gluma previzibilă) rege. Iar cvasi-ubicuitatea manelei, atât în spațiul privat cât și în cel public, indică o mai largă acceptare a acesteia și o depășire a clivajelor de acum câteva decenii - Radu Uszkai.
+
+Tot după pandemie, manelele și-au permis și să abordeze un subiect care era tabu până la acel moment: drogurile. Mulți artiști s-au ținut departe de a promova consumul în piesele lor. 
+
+Din nou, șmecheria din manele și-a adăugat încă un strat.
+
+„E o piesă care face apologia drogurilor, a consumului, într-un limbaj foarte deștept, subversiv, obraznic, cântată de Costel Biju și Iuly Neamțu. Inclusiv de aici îți dai seama că manelele au suferit un lifting”, spune Adi Șchiop, făcând referire la piesa Lupii. 
+
+Tot în acea perioadă s-au ridicat și nume ca Tzanca Uraganu, Bogdan de la Ploiești, iar fenomenul trapanelelor i-a făcut pe mulți să îmbine tot mai mult trapul cu manelele și invers - vezi Gheboasă.
+
+Relevantă, în acest context, e și colaborarea dintre Bruja și Adrian Minune - pentru o variantă reinterpretată a piesei pe care o cântă artistul în filmul Gadjo Dilo, lansat în 1997. 
+
+Acceptate pe internet și în sfere mari din societate, manelele beneficiau și de pe urma unui scandal, cu expunere publică mare, după ce Babasha a fost invitat să cânte la concertul Coldplay, momentul iunie 2024. 
+
+La prima urcare, a fost huiduit, la a doua urcare a fost aplaudat, „după ce cei care l-au huiduit și-au dat seama că nu au susținerea internetului pentru gestul lor, s-au repliat, dar au fost, la rându-le, huiduiți”, remarcă Adi Șchiop.
+
+A fost și, poate, primul moment vizibil în care stilul muzical a arătat că episoadele de rasism nu-l mai pot trimite înapoi în underground, ba, din contră, îi pot propulsa și mai tare. 
+
+Este indubitabil că în România, la fel ca peste tot în lume de altfel, există diverse forme de rasism, fie explicit sau implict. Ce diferă la nivel global este dimensiunea acestor atitudini și măsura în care acestea joacă un rol social-politic. Uitându-ne la anii de după Revoluție și la dezbaterea privitoare la manele de la începutul anilor 2000, cred că este dificil de scos din ecuație rolul jucat de atitudini rasiste explicite sau implicite. Istoria receptării manelei nu este sub nicio formă diferită de cea a receptării altor forme de expresie artistică ale unor minorități discriminate istoric și structural de societățile din care fac parte. Riscul, cel puțin așa cum îl văd eu în acest moment, este să privim relația indivizilor cu maneaua eminamente prin prisma unor ochelari moral-politici și să lăsăm deoparte ochelarii esteticic. Nu orice atitudine estetizantă este însă una moralizatoare și nu orice replică de genul „nu ascult/nu-mi plac manelele” nu înseamnă că persoana în cauză este rasistă, fie chiar și implicit. Nu tot ce facem este politic și nu tot ce ascultăm e o reflecție a ideologiei noastre căci, dacă ar fi altfel, atunci mult succes să ne explice cineva cum de există rapperi cu atitudini rasiste față de persoanele de culoare - Radu Uszkai.
+
+2024 a fost și momentul în care artiștii de manele au simțit că pot avea un cuvânt de spus și în politică, bazându-se pe expunerea mare din online. Tzanca Uraganu a făcut o piesă de susținere pentru candidatura la prezidențiale a lui George Simion, Dani Mocanu pentru Nicolae Ciucă, iar Gheboasă pentru PNL. 
+</p></div>
+        <div class="chapter-container" id="chapter-4"><h2>„Napoletanul” Dani Mocanu</h2><p>Tot din noul val de șmecherie face parte și mesajul puternic subversiv pe care Dani Mocanu pare că l-a patentat și cu care a reușit să ajungă o vedetă în online. 
+
+Pe contul său de YouTube numără peste 4 milioane de abonați, iar clipurile lui au depășit 2,5 MILIARDE de vizualizări. 
+
+„Omul e pe scenă din 2016”, își aduce aminte Adrian Șchiop. 
+
+„Își face debutul alături de Dani - Prințul Banatului, cântă niște manele copiate de afară, care sunt ca „un rap franțuzesc-arăbesc, combinat cu muzica mafioților din Napoli”. Șchiop afirmă că cei doi scot niște piese „de pușcărie, foarte underground cumva”, după care se ceartă, mai ales că „Prințul Banatului are o voce clonă de Guță, nu avea nicio șansă”, dar Dani Mocanu își continuă cariera.
+
+Ceea ce a făcut Dani Mocanu a fost, cumva, să reinterpreteze și să actualizeze „muzica vagabonțească” de la începutul anilor 90, dar să-i dea o formă mult mai directă și explicită. 
+
+„E primul manelist subversiv asumat, până la el maneaua nu era așa, era mai mult voalată, vorbea despre rele, dar mai mult codat”.
+
+Stilul său direct și fără teamă de repercusiuni e preluat, poate indirect, de fenomenul trapanelelor. 
+
+Ce face Dani Mocanu? E primul vizionar, pentru că e primul manelist care își asumă scandalul, e portavocea proxeneților, e mândru că face rele.
+
+Cel mai subversiv clip de manele - ăsta e. Regie în stilul Sergiu Nicolaescu, dar închinat fraților Corduneanu.
+
+Pe de altă parte, succesul lui Dani Mocanu vine din YouTube și din câteva cântări prin cluburi, tocmai pentru că nu e chemat la petreceri. „Nu e lăutar, e performer”, arată Șchiop. 
+
+De altfel, această asumare i-a adus și câteva dosare penale și a primit și o condamnare, în primă instanță, de 6 ani și 5 luni.
+
+Când scriu aceste rânduri, Dani Mocanu are 3 piese în top 10 în trending pe YouTube, cu niște subiecte ușor de intuit. Judecând strict în termeni morali, popularitatea acestuia nu poate să nu ridice niște semne de întrebare legitime. Sigur că de cele mai multe ori trebuie să separăm arta de artist, însă atunci când o persoană condamnată pentru proxenetism glorifică, în muzica sa, proxenetismul sau putinismul, poate că o întoarcere la manelele old school ar fi dezirabilă - Radu Uszkai.
+</p></div>
+        <div class="chapter-container" id="chapter-5"><h2>Maneaua, în 2025</h2><p>Anul 2025 găsește manelele pe val, un val condus în primul rând de trending-ul de pe YouTube, dar și de o acceptare socială mai mare în rândul populației. 
+
+Tinerii Generației Z nu mai au nicio problemă în a recunoaște că ascultă manele, revelioanele marilor televiziuni ca Protv și Antena 1 i-au redescoperit pe artiștii vechi și noi, iar cluburile de hipsteri din orașele mari nu se feresc deloc să pună manele la petreceri. 
+
+Pentru persoanele din Gen. Z disputa cu privire la manele începe să semene foarte mult cu conflictul dintre rockeri și depeșari din anii '90, adică a devenit doar o nouă pagină din istoria culturală recentă a României de tranziție. Ce s-a întâmplat între timp? Cu siguranță că un rol major l-a jucat schimbarea patternului de consum cultural: când nu mai depinzi de radio sau TV pentru modelarea preferințelor muzicale și tot ce asculți se aude dintr-un device conectat non-stop la internet și platforme sociale, comunitățile și bulele din care ajungi să faci parte (comunități lipsite deseori de vreo figură de autoritate estetică clasică) joacă un rol cheie. Într-un sens macro însă, chiar cultura s-a schimbat. Identitatea muzicală este acum semnificativ mai fluidă, cu precădere în rândul celor din Gen Z. Nu te mai faci vinovat acum de vreo contradicție performativă dacă asculți, concomitent, metal, trap și manele. În post-modernism, identitatea noastră muzicală a devenit una post-ironică - Radu Uszkai.
+
+Există, totuși, o anumită împărțire a fanilor. Tzanca Uraganu sau Bogdan de la Ploiești sunt vedete pe YouTube, dar, după cum punctează Adi Șchiop, e posibil ca „Florin Salam să facă mai mulți bani decât Tzanca”, tocmai pentru că primul e preferat la petrecerile părinților (interlopilor), iar cel de-al doilea e, mai degrabă, preferatul copiilor lor.
+
+Chiar și așa, artiștii din această zonă sunt evitați la radio și nici nu-și organizează concerte și evenimente mari - la Sala Palatului, de exemplu.
+
+„Au fost încercări de a organiza concerte de manele la Sala Palatului, dar nu prea se vând biletele. Cei care ascultă manele fie vor să audă versiunea originală, de studio, pe YouTube sau direct în club, dar fără improvizații, fără să o cânte live artistul, fie nu plătesc bilet pentru așa ceva. În rest, manelele au spațiul lor - la cumetrii sau în locații cu tematică, precum Hanul Drumețului”, spune Adi Șchiop, care crede că manelele vor ajunge și la radio doar după ce decidenții de acolo, în mare parte oameni care fac parte din generația de peste 40 de ani, vor fi înlocuiți de cei tineri, care nu au o aversiune față de acest stil muzical. 
+
+Maneaua rămâne manea, indiferent de cum evoluează. Așadar, a le încadra la manele noi, la trapanele sau a le pune orice altă etichetă sau denumire e ceva greșit, crede Adi Șchiop.
+
+„Genul evoluează pur și simplu, maneaua s-a globalizat și va continua să o facă”, punctează el.
+În comunitatea hipsterilor, asumând că există o definiție de lucru utilă pentru acest concept, maneaua este cu siguranță mainstream și trece printr-un proces de interpretare și reinterpretare - Radu Uszkai.
+</p></div>
+    </main>
+    
+    <div id="controls-container">
+        <button id="play-pause-button" class="control-button" aria-label="Play/Pauză">
+            <svg class="play-icon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+            <svg class="pause-icon" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"></path></svg>
+        </button>
+        <button id="chapter-button" class="control-button">Mergi la capitol</button>
+    </div>
+
+    <div id="chapter-popup">
+        <div class="popup-content">
+            <span class="popup-close-button">×</span>
+            <div id="popup-chapter-content">
+                <!-- Chapter content will be injected here by JS -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const wordData = [
+              {
+                "period": "Protomanea / Pre-1990",
+                "words": [
+                  { "text": "iubire", "count": 58, "type": "romantic" },
+                  { "text": "viață", "count": 39, "type": "existențial" },
+                  { "text": "suflet", "count": 27, "type": "existențial" },
+                  { "text": "fată", "count": 25, "type": "romantic" },
+                  { "text": "dor", "count": 21, "type": "durere" },
+                  { "text": "inimă", "count": 19, "type": "durere" },
+                  { "text": "lume", "count": 16, "type": "existențial" },
+                  { "text": "ban", "count": 15, "type": "bani" },
+                  { "text": "durere", "count": 14, "type": "durere" },
+                  { "text": "noapte", "count": 13, "type": "existențial" },
+                  { "text": "ochi", "count": 12, "type": "corp" },
+                  { "text": "frate", "count": 11, "type": "familie" },
+                  { "text": "singur", "count": 11, "type": "durere" },
+                  { "text": "dușman", "count": 10, "type": "conflict" },
+                  { "text": "soartă", "count": 9, "type": "existențial" },
+                  { "text": "mamă", "count": 8, "type": "familie" },
+                  { "text": "vis", "count": 8, "type": "nostalgie" },
+                  { "text": "amintire", "count": 8, "type": "nostalgie" },
+                  { "text": "prieten", "count": 7, "type": "familie" },
+                  { "text": "pleacă", "count": 7, "type": "durere" },
+                  { "text": "plâng", "count": 6, "type": "durere" },
+                  { "text": "avere", "count": 6, "type": "bani" }
+                ]
+              }
+            ];
+            const protoManeleWords = wordData[0].words;
+
+            // === NEW: Aggregate word counts by type ===
+            // This transforms the data from a list of words to a list of themes
+            const typeMap = protoManeleWords.reduce((acc, word) => {
+                const { type, count } = word;
+                // If the type is not yet in our map, initialize it
+                if (!acc[type]) {
+                    acc[type] = 0;
+                }
+                // Add the current word's count to the total for its type
+                acc[type] += count;
+                return acc;
+            }, {});
+
+            // Convert the map object back into an array D3 can use
+            const aggregatedWordTypes = Object.keys(typeMap).map(type => ({
+                type: type,
+                totalCount: typeMap[type]
+            }));
+            // === END OF DATA AGGREGATION ===
+
+            const chapters = [
+                { 
+                    id: 1, 
+                    title: 'Protomaneaua', 
+                    color: '#FF7400', 
+                    mp3Src: 'song1.mp3', 
+                    diskSrc: 'disk1.png', 
+                    headSrc: 'head1.png',
+                    scrollTarget: '#chapter-1', 
+                    lyrics: [
+                        { timings: [ [6.5, 0], [7.5, 0.4], [15.5, 0.6], [16.0, 1.0] ], text: "Cate nopti am plans, am plans dupa tine" },
+                        { timings: [ [16.0, 0], [18.5, 0.5], [19.2, 0.5], [21.0, 1.0] ], text: "Mi-ai rupt inima, sufletu' in mine." },
+                        { timings: [ [21.0, 0], [22.0, 0.4], [30.0, 0.6], [30.5, 1.0] ], text: "Cate nopti am plans, am plans dupa tine" },
+                        { timings: [ [30.5, 0], [33.0, 0.5], [33.7, 0.5], [35.5, 1.0] ], text: "Mi-ai rupt inima, sufletu' in mine." },
+                        { time: 40.5, text: "Lacrimi pe obraz mi-au curs, multe nopti am plans" },
+                        { time: 43.0, text: "Nu stiu ce ma fac suferintele s-au strans" },
+                        { time: 46.0, text: "Vreau sa uit de tine dar stiu ca nu se poate" },
+                        { time: 48.8, text: "Sunt tare necajit ca de tine nu am parte" },
+                        { time: 51.8, text: "Simt ca in jurul meu totul se prabuseste" },
+                        { time: 54.8, text: "Tu nu imi apartii si asta ma innebuneste" },
+                        { time: 58.2, text: "Persoana ta ma domina si nu-i bine" },
+                        { time: 60.8, text: "De cand te-am cunoscut ma gandesc numai la tine." }
+                    ]
+                },
+                // ... other chapters ...
+                { 
+                    id: 2, 
+                    title: 'Fenomenul Florin Salam', 
+                    color: '#00FFBB', 
+                    mp3Src: 'song2.mp3', 
+                    diskSrc: 'disk2.png',
+                    headSrc: 'head2.png',
+                    scrollTarget: '#chapter-2', 
+                    lyrics: [ { time: 0.0, text: "Voi oameni bogati" } ]
+                },
+                { 
+                    id: 3, 
+                    title: 'Pandemia', 
+                    color: '#2FB1FE', 
+                    mp3Src: 'song3.mp3', 
+                    diskSrc: 'disk3.png',
+                    headSrc: 'head3.png',
+                    scrollTarget: '#chapter-3', 
+                    lyrics: [ { time: 3.8, text: "Luna plina iar ne-am transformat" } ]
+                },
+                { 
+                    id: 4, 
+                    title: 'Dani Mocanu', 
+                    color: '#5F00C1', 
+                    mp3Src: 'song4.mp3', 
+                    diskSrc: 'disk4.png',
+                    headSrc: 'head4.png',
+                    scrollTarget: '#chapter-4', 
+                    lyrics: [ { time: 12.0, text: "N-aveam un colț de pâine și nu știam de mâine" } ]
+                },
+                { 
+                    id: 5, 
+                    title: 'Maneaua 2025', 
+                    color: '#FF7D9D', 
+                    mp3Src: 'song5.mp3', 
+                    diskSrc: 'disk5.png',
+                    headSrc: 'head5.png',
+                    scrollTarget: '#chapter-5', 
+                    lyrics: [ { time: 0.0, text: "Mrr, mrr, Juve la butoane" } ]
+                },
+            ];
+
+            const width = 600, height = 600, margin = 60;
+            const radius = Math.min(width, height) / 2 - margin;
+            const textRadius = radius + 25;
+            
+            const svgContainer = d3.select("#donut-chart");
+            const svg = svgContainer
+                .attr("viewBox", `0 0 ${width} ${height}`)
+                .attr("preserveAspectRatio", "xMidYMid meet")
+                .append("g")
+                .attr("transform", `translate(${width / 2}, ${height / 2})`);
+
+            const pie = d3.pie().value(d => 1).sort(null);
+            const arcGenerator = d3.arc().innerRadius(radius * 0.9).outerRadius(radius);
+            const textArc = d3.arc().innerRadius(textRadius).outerRadius(textRadius);
+            const data_ready = pie(chapters);
+
+            const controlsContainer = document.getElementById('controls-container');
+            const playPauseButton = document.getElementById('play-pause-button');
+            const chapterButton = document.getElementById('chapter-button');
+            const chapterPopup = document.getElementById('chapter-popup');
+            const popupContentContainer = document.getElementById('popup-chapter-content');
+            const closePopupButton = document.querySelector('.popup-close-button');
+            const introButton = document.getElementById('intro-button'); 
+            const bubbleContainer = d3.select('#bubble-container');
+            
+            const segmentGroups = svg.selectAll('g.arc').data(data_ready).enter().append('g').attr('class', 'arc');
+            segmentGroups.append('path').attr('d', arcGenerator).attr('data-original-d', arcGenerator).attr('fill', d => d.data.color).on('click', handleSegmentClick);
+            segmentGroups.append('path').attr('id', (d, i) => `arc-for-text-${i}`).attr('d', textArc).style('fill', 'none');
+            segmentGroups.append('text').append('textPath').attr('startOffset', '25%').attr('text-anchor', 'middle').attr('xlink:href', (d, i) => `#arc-for-text-${i}`).text(d => d.data.title);
+
+            const audioElement = document.getElementById('chapter-audio');
+            const diskContainer = document.getElementById('vinyl-container');
+            const lyricLineEl = document.getElementById('lyric-line');
+            const karaokeBallEl = document.getElementById('karaoke-ball');
+            const playerSection = document.getElementById('player-section');
+            
+            const diskImageElement = document.getElementById('disk-img');
+            const headImageElement = document.getElementById('head-img');
+            const defaultDiskSrc = 'disk0.png';
+            const defaultHeadSrc = 'head0.png';
+            
+            let currentChapterLyrics = [];
+            let activeSegment = null;
+            let activePathElement = null;
+            let activeSegmentData = null;
+            let audioCtx, analyser, source, dataArray;
+            let animationFrameId;
+
+            function setupAudioContext() { if(audioCtx) return; audioCtx = new (window.AudioContext || window.webkitAudioContext)(); analyser = audioCtx.createAnalyser(); analyser.fftSize = 256; const bufferLength = analyser.frequencyBinCount; dataArray = new Uint8Array(bufferLength); source = audioCtx.createMediaElementSource(audioElement); source.connect(analyser); analyser.connect(audioCtx.destination); }
+            audioElement.addEventListener('play', () => { if (activePathElement) startVisualization(activePathElement, activeSegmentData); controlsContainer.classList.add('is-playing'); playerSection.classList.add('is-active'); if (activeSegmentData && activeSegmentData.data.id === 1) { showBubbleAnimation(activeSegmentData.data.color); } });
+            audioElement.addEventListener('pause', () => { stopVisualization(); controlsContainer.classList.remove('is-playing'); playerSection.classList.remove('is-active'); hideBubbleAnimation(); });
+            audioElement.addEventListener('ended', () => { stopVisualization(); controlsContainer.classList.remove('is-playing'); playerSection.classList.remove('is-active'); hideControls(); hideBubbleAnimation(); });
+            audioElement.addEventListener('timeupdate', updateKaraoke);
+            function handleSegmentClick(event, d) { setupAudioContext(); if (audioCtx.state === 'suspended') audioCtx.resume(); const chapterData = d.data; const isSameSong = audioElement.src.includes(chapterData.mp3Src); hideBubbleAnimation(); if (activePathElement && !isSameSong) stopVisualization(); if (isSameSong && !audioElement.paused) { audioElement.pause(); hideControls(); } else if (isSameSong && audioElement.paused) { showControls(chapterData); audioElement.play(); } else { if (activeSegment) activeSegment.classList.remove('active'); activeSegment = this.parentNode; activeSegment.classList.add('active'); activePathElement = this; activeSegmentData = d; diskImageElement.src = chapterData.diskSrc; headImageElement.src = chapterData.headSrc; audioElement.src = chapterData.mp3Src; currentChapterLyrics = chapterData.lyrics; audioElement.play(); showControls(chapterData); } }
+            playPauseButton.addEventListener('click', () => { if (!audioElement.src) return; if (audioElement.paused) { audioElement.play(); } else { audioElement.pause(); } });
+            chapterButton.addEventListener('click', function(e) { e.preventDefault(); audioElement.pause(); openPopupWithContent(this.dataset.chapterTarget); hideControls(); hideBubbleAnimation(); });
+            introButton.addEventListener('click', () => { openPopupWithContent('#intro-content'); });
+            function openPopupWithContent(targetSelector) { const contentSource = document.querySelector(targetSelector); if (contentSource) { popupContentContainer.innerHTML = contentSource.innerHTML; chapterPopup.classList.add('is-visible'); document.body.classList.add('popup-open'); } else { console.error('Popup content source not found:', targetSelector); } }
+            function showControls(chapterData) { const svgRect = svgContainer.node().getBoundingClientRect(); const scaleX = svgRect.width / width; const scaleY = svgRect.height / height; const buttonPosition = [0, radius * 0.6]; const x = svgRect.left + (buttonPosition[0] + width / 2) * scaleX; const y = svgRect.top + (buttonPosition[1] + height / 2) * scaleY; controlsContainer.style.left = `${x}px`; controlsContainer.style.top = `${y}px`; chapterButton.dataset.chapterTarget = chapterData.scrollTarget; controlsContainer.classList.add('is-visible'); }
+            function hideControls() { controlsContainer.classList.remove('is-visible'); diskImageElement.src = defaultDiskSrc; headImageElement.src = defaultHeadSrc; }
+            closePopupButton.addEventListener('click', () => { chapterPopup.classList.remove('is-visible'); document.body.classList.remove('popup-open'); });
+            function startVisualization(pathElement, data) { diskContainer.classList.add('is-playing'); activePathElement = pathElement; activeSegmentData = data; visualize(); }
+            function stopVisualization() { diskContainer.classList.remove('is-playing'); if (animationFrameId) cancelAnimationFrame(animationFrameId); if (activePathElement) { const originalD = d3.select(activePathElement).attr('data-original-d'); d3.select(activePathElement).attr('d', originalD); } }
+            function visualize() { if (!activePathElement || audioElement.paused) { stopVisualization(); return; }; analyser.getByteFrequencyData(dataArray); const average = dataArray.reduce((a, b) => a + b, 0) / dataArray.length; const maxAmplitude = 75; const amplitude = (average / 128.0) * maxAmplitude; const pulsingArc = d3.arc().innerRadius(radius * 0.9).outerRadius(radius + amplitude).startAngle(activeSegmentData.startAngle).endAngle(activeSegmentData.endAngle); d3.select(activePathElement).attr('d', pulsingArc); animationFrameId = requestAnimationFrame(visualize); }
+            function updateKaraoke() { if (audioElement.paused) return; const currentTime = audioElement.currentTime; let currentLyric = null; for (let i = 0; i < currentChapterLyrics.length; i++) { const lyric = currentChapterLyrics[i]; const startTime = lyric.time ?? lyric.timings[0][0]; if (currentTime >= startTime) { currentLyric = lyric; } } if (currentLyric) { lyricLineEl.textContent = currentLyric.text; karaokeBallEl.style.opacity = '1'; let progress = 0; if (currentLyric.timings) { let keyframeStart, keyframeEnd; for (let i = 0; i < currentLyric.timings.length - 1; i++) { if (currentTime >= currentLyric.timings[i][0] && currentTime <= currentLyric.timings[i+1][0]) { keyframeStart = currentLyric.timings[i]; keyframeEnd = currentLyric.timings[i+1]; break; } } if (keyframeStart && keyframeEnd) { const segmentDuration = keyframeEnd[0] - keyframeStart[0]; const timeIntoSegment = currentTime - keyframeStart[0]; const segmentProgress = (segmentDuration > 0) ? timeIntoSegment / segmentDuration : 1; const progressRange = keyframeEnd[1] - keyframeStart[1]; progress = keyframeStart[1] + (segmentProgress * progressRange); } else if (currentTime >= currentLyric.timings[currentLyric.timings.length - 1][0]) { progress = 1; } } else if (currentLyric.time) { let nextLyric = null; for (let i = 0; i < currentChapterLyrics.length; i++) { if (currentChapterLyrics[i] === currentLyric && i + 1 < currentChapterLyrics.length) { nextLyric = currentChapterLyrics[i + 1]; break; } } const lyricStartTime = currentLyric.time; const lyricEndTime = nextLyric ? (nextLyric.time ?? nextLyric.timings[0][0]) : audioElement.duration; const duration = lyricEndTime - lyricStartTime; if (duration > 0) { progress = Math.min((currentTime - lyricStartTime) / duration, 1); } } karaokeBallEl.style.left = `${lyricLineEl.offsetWidth * progress}px`; } else { lyricLineEl.innerHTML = ' '; karaokeBallEl.style.opacity = '0'; } }
+
+            // === UPDATED BUBBLE ANIMATION FUNCTIONS ===
+            let bubbleClearTimeout;
+            
+            function showBubbleAnimation(sectionColor) {
+                clearTimeout(bubbleClearTimeout);
+                bubbleContainer.html(''); 
+                
+                // Use the aggregated data for scaling
+                const sizeScale = d3.scaleSqrt()
+                    .domain(d3.extent(aggregatedWordTypes, d => d.totalCount))
+                    .range([70, 160]); // Made bubbles a bit larger to fit type names
+
+                // Use the aggregated data for the D3 join
+                bubbleContainer.selectAll('.word-bubble')
+                    .data(aggregatedWordTypes)
+                    .enter()
+                    .append('div')
+                    .attr('class', 'word-bubble')
+                    // Size is based on the new totalCount property
+                    .style('width', d => `${sizeScale(d.totalCount)}px`)
+                    .style('height', d => `${sizeScale(d.totalCount)}px`)
+                    .style('font-size', d => `${sizeScale(d.totalCount) * 0.15}px`) // Adjusted font size
+                    .style('background-color', () => {
+                        const color = d3.color(sectionColor);
+                        color.opacity = 0.65;
+                        return color;
+                    })
+                    .style('left', () => `${Math.random() * 95}%`) 
+                    .style('animation-duration', () => `${12 + Math.random() * 8}s`) 
+                    .style('animation-delay', () => `${Math.random() * 10}s`) 
+                    // The text label is now the 'type' property
+                    .text(d => d.type);
+
+                bubbleContainer.classed('is-active', true);
+            }
+
+            function hideBubbleAnimation() {
+                bubbleContainer.classed('is-active', false);
+                bubbleClearTimeout = setTimeout(() => {
+                    bubbleContainer.html('');
+                }, 500); 
+            }
+        });
+    </script>
+</body>
+</html>
