@@ -12,6 +12,7 @@
     :root {
         --bg-color: #FFF1CC;
         --text-color: #000000;
+        
     }
     html { overflow-y: scroll; overflow-x: hidden; }
     body::-webkit-scrollbar:horizontal { display: none; }
@@ -27,14 +28,14 @@
         position: relative;
     }
     #intro-screen {
-        height: 100vh;
-        min-height: 600px;
+        height: auto;
+        min-height: calc(var(--vh, 1vh) * 100);
         display: flex;
         flex-direction: column;
         justify-content: flex-start;
         align-items: center;
         text-align: center;
-        padding: 5vh 1rem 1rem;
+        padding: calc(var(--vh, 1vh) * 5) 1rem 1rem;
         position: sticky;
         top: 0;
         z-index: 10;
@@ -78,7 +79,7 @@
         max-width: 450px;
         aspect-ratio: 1 / 1;
         margin-top: auto;
-        margin-bottom: auto;
+        margin-bottom: calc(var(--vh, 1vh) * 20);
     }
     #head-img, #disk-pivot {
         position: absolute;
@@ -96,11 +97,15 @@
     #disk-pivot { z-index: 10; transform-origin: 60% 36%; }
     #disk-img { width: 100%; height: 100%; display: block; }
     #head-img { z-index: 5; pointer-events: none; }
+    
     .arc path {
         stroke: #ffffff33;
         stroke-width: 2px;
-        transition: opacity 0.3s ease, d 0.05s linear;
+        transition: opacity 0.3s ease, transform 0.05s linear;
+        transform-origin: center;
+        will-change: transform;
     }
+
     .arc path { cursor: pointer; }
     .arc.leaf path { cursor: pointer; }
     .arc.leaf:hover path { opacity: 0.8; }
@@ -122,31 +127,60 @@
     }
     @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
     .is-playing #disk-pivot { animation: spin 4s linear infinite; }
+    
+    
     #player-section {
-        position: fixed; bottom: 2vh; left: 0;
-        width: 100%; display: flex; justify-content: center; z-index: 20;
-        opacity: 0;
-        transform: translateY(100%);
-        transition: opacity 0.3s ease, transform 0.3s ease;
-        pointer-events: none;
+        position: fixed;
+        bottom: 0; left: 0; right: 0;
+        width: 100%;
+        height: auto; 
+        z-index: 20;
+        pointer-events: none; 
     }
-    #player-section.is-active {
-        opacity: 1;
-        transform: translateY(0);
-        pointer-events: auto;
-    }
+
     #lyrics-container {
-        position: relative;
+        
+        position: fixed;
+        bottom: 1rem;
+        left: 50%;
+        
+        
+        opacity: 0;
+        transform: translateX(-50%) translateY(150%);
+        transition: opacity 0.3s ease, transform 0.3s ease;
+        will-change: transform, opacity;
+
+        
+        width: 90%;
+        max-width: 350px;
+        height: 6rem; 
+        padding: 15px 25px;
         background-color: rgba(255, 255, 255, 0.8);
         backdrop-filter: blur(5px);
-        padding: 15px 25px;
         border-radius: 20px;
-        min-width: 300px; max-width: 80%;
-        text-align: center;
         box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        text-align: center;
+        
+        
+        overflow-y: auto;
+        white-space: normal;
+        word-break: break-word;
+        overscroll-behavior: contain; 
+        
+        
+        pointer-events: auto;
     }
+
+    
+    #player-section.is-active #lyrics-container {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+    
+
     #lyric-line {
         font-family: 'Roboto Slab', serif; font-size: 1.2rem;
+        line-height: 1.4; 
         font-weight: 700;
         --highlight-color: #e53935;
     }
@@ -233,7 +267,8 @@
     }
     .popup-content {
         background-color: #fff; width: 90%; max-width: 800px;
-        height: 90vh; border-radius: 15px; padding: 2rem 3rem;
+        height: calc(var(--vh, 1vh) * 90);
+        border-radius: 15px; padding: 2rem 3rem;
         overflow-y: auto; position: relative;
         box-shadow: 0 10px 30px rgba(0,0,0,0.2);
     }
@@ -274,9 +309,12 @@
     #bubble-container {
         position: fixed;
         top: 0; left: 0;
-        width: 100%; height: 100%;
+        width: 100vw; height: 100vh;
         pointer-events: none; z-index: 90; overflow: hidden;
         opacity: 0; transition: opacity 0.5s ease-in-out;
+        contain: strict;
+        transform: translateZ(0);
+        will-change: opacity;
     }
     #bubble-container.is-active { opacity: 1; }
     .word-bubble {
@@ -287,34 +325,38 @@
         border-radius: 50%; top: -20%;
         animation-name: fall; animation-timing-function: linear;
         animation-iteration-count: infinite; will-change: transform;
+        pointer-events: none;
+        contain: layout paint;
+        backface-visibility: hidden;
     }
-    @keyframes fall { to { transform: translateY(120vh); } }
-    
+    @keyframes fall { to { transform: translateY(calc(var(--vh, 1vh) * 120)); } }
+
     #sens-image {
         max-width: 200px;
         width: 100%;
         height: auto;
         display: block;
-        margin: 0 auto 5rem auto; 
+        margin: 0 auto 5rem auto;
         border-radius: 8px;
     }
 
     @media (max-width: 768px) {
         .title { font-size: 1.8rem; }
         .intro-text { margin-top: 1.5rem; font-size: 0.95rem; }
-        #vinyl-container { max-width: 400px; }
+        #vinyl-container { max-width: 400px; margin-bottom: calc(var(--vh, 1vh) * 15); }
         .play-prompt { margin-top: 0.5rem; }
         .popup-content { padding: 2rem 1.5rem; }
     }
 
-    
+
     @media (max-width: 600px) {
-        #intro-screen { padding-top: 3vh; }
+        #intro-screen { padding-top: calc(var(--vh, 1vh) * 3); }
         .intro-btn { margin-bottom: 2rem; }
         #vinyl-container {
             width: 96vw;
             max-width: 96vw;
             min-width: 150px;
+            margin-bottom: calc(var(--vh, 1vh) * 15);
         }
         #donut-chart {
             width: 100%;
@@ -336,26 +378,19 @@
             top: 12.5%;
         }
         .arc text { font-size: clamp(8px, 2.2vw, 11px); }
-        #lyrics-container {
-            min-width: 0;
-            width: 90%;
-            padding: 10px 15px;
-        }
-        #lyric-line { font-size: 1.1rem; }
-        .popup-content { height: 95vh; padding: 1.5rem; }
+
+        #lyric-line { font-size: 1rem; }
+        .popup-content { height: calc(var(--vh, 1vh) * 95); padding: 1.5rem; }
         .popup-close-button { top: 10px; right: 15px; font-size: 2rem; }
 
         #sens-image {
             margin-bottom: 0.1rem;
         }
 
-        
         #controls-container {
-            bottom: 3rem; 
+            bottom: 3rem;
         }
     }
-    
-
 
     .segment-label-arc { fill: none; pointer-events: none; }
     .segment-label-text {
@@ -394,8 +429,8 @@
     #chart-tooltip.is-visible {
         opacity: 1;
     }
-    
-    
+
+
     #chart-tooltip.is-button {
         background-color: #333;
         color: #fff;
@@ -403,19 +438,19 @@
         border-radius: 20px;
         cursor: pointer;
         transition: background-color 0.2s, opacity 0.2s ease-in-out;
-        pointer-events: auto; 
-        transform: translate(-50%, -120%); 
+        pointer-events: auto;
+        transform: translate(-50%, -120%);
     }
 
     #chart-tooltip.is-button:hover {
         background-color: #555;
     }
 
-    
+
     #controls-container #chapter-button {
         display: none;
     }
-    
+
 </style>
 </head>
 <body>
@@ -465,7 +500,7 @@
             </div>
             <img id="head-img" src="head0.png" alt="Profile of a person">
             <svg id="donut-chart"></svg>
-            <!-- === START: MOVED HTML FOR CONTROLS === -->
+            
             <div id="controls-container">
                 <button id="play-pause-button" class="control-button" aria-label="Play/Pauză">
                     <svg class="play-icon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
@@ -487,10 +522,7 @@
         
         <div class="chapter-container" id="intro-content">
             <h2>Introducere și explicații</h2>
-            <button class="popup-play-pause-button" aria-label="Play/Pauză">
-                <svg class="play-icon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
-                <svg class="pause-icon" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"></path></svg>
-            </button>
+            
             <p><strong>Cum funcționează:</strong></p>
             <ul>
                 <li><strong>Apasă pe un segment</strong> pentru a asculta o melodie reprezentativă. Poți apăsa atât pe capitolele mari (inelul exterior), cât și pe sub-capitolele detaliate (inelul interior).</li>
@@ -519,16 +551,16 @@ Dimensiunea fiecărei buline indică importanța temei în perioada respectivă:
 <br><p>Din punct de vedere muzical, existau puternice <span style="color:#FF8100;">influențe balcanice</span>, începând cu cele grecești.</p>
 
 <br><p><em>Caseta Wikipedia zice așa</em>: Formația Generic a rămas underground până în 1990 deoarece regimul comunist nu tolera genul de muzică cântată, debutând public în același an cu albumul „Raza de soare”. Albumul a fost înregistrat în 1987 și a fost disponibil sub formă de casete audio, imprimarea la casa de discuri Electrecord fiind interzisă din cauza <a href="https://ro.wikipedia.org/wiki/Generic_(forma%C8%9Bie)#cite_note-5" style="font-weight:bold;">
-        regimului comunist.</a> În 1989, albumul a fost imprimat, fiind disponibil doar pentru prietenii formației, totuși, formația debutează oficial în 1990 cu acest album, devenind un succes, conținând <a href="https://ro.wikipedia.org/wiki/Generic_(forma%C8%9Bie)#cite_note-:0-4" style="font-weight:bold;">
+        regimului comunist.</a> În 1989, albumul a fost imprimat, fiind disponibil doar pentru prietenii formației. Totuși, formația debutează oficial în 1990 cu acest album, care devine un succes, conținând <a href="https://ro.wikipedia.org/wiki/Generic_(forma%C8%9Bie)#cite_note-:0-4" style="font-weight:bold;">
         melodii cântate de trupă în anii precedenți.</a> Albumul avea să vândă <a href="https://ro.wikipedia.org/wiki/Generic_(forma%C8%9Bie)#cite_note-:1-6" style="font-weight:bold;">
         700.000 de exemplare.</a></p>
 
-<br><p>Spre sfârșitul anilor 80, începuseră să se acutizeze și <span style="color:#FF8100;">nemulțumirile</span> la adresa sistemului și, ici-colo, apăreau câteva semne de <span style="color:#FF8100;">rebeliune</span> față de regulile societății de atunci.</p>
+<br><p>Spre sfârșitul anilor '80, începuseră să se acutizeze și <span style="color:#FF8100;">nemulțumirile</span> la adresa sistemului și, ici-colo, apăreau câteva semne de <span style="color:#FF8100;">rebeliune</span> față de regulile societății de atunci.</p>
 
 <br><p>Cea mai obraznică piesă din acea vreme rămâne, în opinia lui Adrian Schiop, <a href="https://www.youtube.com/watch?v=vsKX4NNw5tY&ab_channel=DJTopMusicMix" style="font-weight:bold;">
         „Frate, frate, frățiorul meu”.</a> El spune că era „maximul ce putea fi spus despre o presupusă infracționalitate a acelor vremuri”.</p>
 
-<br><p>Versurile prindeau tocmai pentru că „românii deja nu mai credeau în comunism în anii 80, nu se mai ascundeau, aveau nevoie să li se cânte și altceva”, punctează el.</p>
+<br><p>Versurile prindeau tocmai pentru că „românii deja nu mai credeau în comunism în anii '80, nu se mai ascundeau, aveau nevoie să li se cânte și altceva”, punctează el.</p>
         </div>
         <div class="chapter-container" id="chapter-2">
             <h2 style="color:#7AC753;">Liber la orice. Anii ‘90-’00</h2>
@@ -538,10 +570,10 @@ Dimensiunea fiecărei buline indică importanța temei în perioada respectivă:
             </button>
             <p>După căderea comunismului, <span style="color:#7AC753;">manelele</span> intră într-o nouă eră, cea în care nu mai exista cenzură. Inerțial, melodiile se păstrează în aceeași linie, dar se pune tot mai tare accent pe <span style="color:#7AC753;">versuri care vorbesc despre fărădelegi</span>.</p>
 <br><p>E principalul motiv pentru care genul muzical devine preferatul <span style="color:#7AC753;">„bișnițarilor și al interlopilor”</span>.</p>
-<br><p>Doar că acest fenomen durează doar câțiva ani și e prezent, de obicei, doar în straturile din societate ferite de lumina reflectoarelor. Artiștii de acest fel au reușit să „treacă pe sub radar”, dar apoi, odată luați în vizor, ei sunt nevoiți să-și recalibreze discursul și să „o lase mai moale cu fărădelegile”, punctează scriitorul.</p>
-<br><p>Tot în primii ani de după Revoluție explodează și trupe ca Albatros, care devine o trupă de petrecere de restaurant, cu versuri mult mai curate decât celălalt val menționat. Ambele valuri rămân, însă, underground. 
+<br><p>Acest fenomen durează doar câțiva ani și e prezent, de obicei, doar în straturile din societate ferite de lumina reflectoarelor. Artiștii de acest fel au reușit să „treacă pe sub radar”, dar apoi, odată luați în vizor, ei sunt nevoiți să-și recalibreze discursul și să „o lase mai moale cu fărădelegile”, punctează <strong>Adrian Schiop.</strong></p>
+<br><p>Tot în primii ani de după Revoluție explodează și trupe ca Albatros, care devine o trupă de petrecere de restaurant, cu versuri mult mai curate decât celălalt val menționat. Ambele valuri rămân, însă, underground.</p> 
 
-O bună perioadă, manelele acelor vremuri au fost cântate doar la petreceri private, iar în spațiul public se auzeau doar în piețe, la tarabe, în discoteci din mediul rural, dar casetele nu se vindeau în magazinele de specialitate. 
+<br><p>O bună perioadă, manelele acelor vremuri au fost cântate doar la petreceri private, iar în spațiul public se auzeau doar în piețe, la tarabe, în discoteci din mediul rural, dar casetele nu se vindeau în magazinele de specialitate. 
 </p>
         </div>
     
@@ -566,7 +598,7 @@ O bună perioadă, manelele acelor vremuri au fost cântate doar la petreceri pr
 <br><p>Pe mai departe, după cum arată Adrian Schiop în <a href="https://www.criticatac.ro/cum-au-ingropat-elitele-romaniei-manelele-o-poveste-cu-cocalari/" style="font-weight:bold;">
         acest articol,</a> doar unul dintre genuri ajungea, până la un anumit punct, să fie acceptat de elita intelectuală. Nu erau manelele.</p>
 
-<br><p>Manelele nu dispar, însă, dar se reinventează. Se plusează și pe alte direcții, precum <b>„pornografie și misoginism”,</b> fenomen întreținut pe parcurs de trupe precum Play AJ și alți artiști adunați în jurul lor. Abordarea lirică de acest fel își atinge apogeul după anii 2000, cu piesa „4 nopți și 4 zile”. 
+<br><p>Manelele nu dispar, dar se reinventează. Se plusează și pe alte direcții, precum <b>„pornografie și misoginism”,</b> fenomen întreținut pe parcurs de trupe precum Play AJ și alți artiști adunați în jurul lor. Abordarea lirică de acest fel își atinge apogeul după anii 2000, cu piesa „4 nopți și 4 zile”. 
 </p>
         </div>
         <div class="chapter-container" id="chapter-2-2">
@@ -593,14 +625,14 @@ O bună perioadă, manelele acelor vremuri au fost cântate doar la petreceri pr
 
 <br><p>Nu durează mult, pentru că, ulterior, se intră iar într-o perioadă de <span style="color:#7AC753;">„ghetoizare”</span>, după cum îi spune Adi Schiop, dar această perioadă ajută, culmea, la profesionalizarea industriei de <span style="color:#7AC753;">manele</span> din România.</p>
 
-<br><p>După 2004, când apare internetul, deși industria muzicală mainstream e puternic lovită de piraterie, <span style="color:#7AC753;">manelele</span> se reinventează și, pentru că există bani din cântări, sunt printre primele genuri muzicale din România care profită din plin de apariția muzicii în format mp3.</p>
+<br><p>După 2004, odată cu accesul tot mai larg la internet, când industria muzicală mainstream e puternic lovită de piraterie, <span style="color:#7AC753;">manelele</span> se reinventează. Pentru că există bani din cântări, sunt printre primele genuri muzicale din România care profită din plin de apariția muzicii în format mp3.</p>
 
 <br><p>E o perioadă în care, din nou, <span style="color:#7AC753;">manelele</span> sunt evitate de zona comercială, dar ele rămân expuse publicului prin alte metode.</p>
 
-<br><p>„Nu se bazau pe vânzarea de albume, în 2005-2006 apăreau cd-uri cu <span style="color:#7AC753;">manele</span> cu 200 de piese în format mp3. Erau scoase la case de producție, nu erau piratate, dar erau scoase pe bandă rulantă”, susține scriitorul.</p>
+<br><p>„Nu se bazau pe vânzarea de albume, în 2005-2006 apăreau cd-uri cu <span style="color:#7AC753;">manele</span> cu 200 de piese în format mp3. Erau scoase la case de producție, nu erau piratate, dar erau scoase pe bandă rulantă”, susține <strong>Adrian Schiop.</strong></p>
 
 <br><p>„Nu mi se pare că războiul cultural în jurul manelelor mai are în 2025 la fel de mulți cruciați și apostoli precum avea la începutul anilor 2000. Panica morală asociată cu manelele, încapsulată în <a href="https://www.youtube.com/watch?v=HsTtv_qdv5g" style="font-weight:bold;">
-        celebra emisiune de pe B1TV</a> cu George Pruteanu și Adrian Minune, mai iese la suprafață din când în când (să ne amintim, de pildă, de scandalul de la Filarmonica din Timișoara de acum 3 ani), însă intensitatea cu care aceasta se manifestă este, în opinia mea, semnificativ mai scăzută” - <strong>Radu Uszkai,</strong> cercetător la Centrul de Cercetare în Etică Aplicată, Universitatea din București,  asistent universitar în cadrul Departamentului de Filosofie și Științe Socio-umane al Academiei de Studii Economice</p>
+        celebra emisiune de pe B1TV</a> cu George Pruteanu și Adrian Minune, mai iese la suprafață din când în când (să ne amintim, de pildă, de scandalul de la Filarmonica din Timișoara de acum 3 ani), însă intensitatea cu care aceasta se manifestă este, în opinia mea, semnificativ mai scăzută” - spune <strong>Radu Uszkai,</strong> cercetător la Centrul de Cercetare în Etică Aplicată, Universitatea din București,  asistent universitar în cadrul Departamentului de Filosofie și Științe Socio-umane al Academiei de Studii Economice</p>
 
         </div>
         
@@ -612,7 +644,7 @@ O bună perioadă, manelele acelor vremuri au fost cântate doar la petreceri pr
             </button>
              <p>În 2002-2003 devine cunoscut și <span style="color:#e6bb00;">Florin Salam</span>, unul dintre cei mai cunoscuți cântăreți de <span style="color:#e6bb00;">manele</span> din ziua de azi, cel supranumit <span style="color:#e6bb00;">Regele</span>.</p>
 
-<br><p>Cânta pe la petreceri private încă de pe la sfârșitul anilor 90, cu numele de scenă <strong>Florin Fermecătoru’</strong>, dar nu are succes o bună perioadă de timp pentru că e eclipsat de cei care erau atunci pe val: <strong>Adrian Minune</strong>, <strong>Nicolae Guță</strong>, <strong>Vali Vijelie</strong> și alții. În plus, faptul că-și face apariția într-o perioadă în care <span style="color:#FFE000;">manelele</span> nu sunt în lumina reflectoarelor nu-l ajută.</p>
+<br><p>Cânta pe la petreceri private încă de pe la sfârșitul anilor '90, cu numele de scenă <strong>Florin Fermecătoru’</strong>, dar nu are succes o bună perioadă de timp, pentru că e eclipsat de cei care erau atunci pe val: <strong>Adrian Minune</strong>, <strong>Nicolae Guță</strong>, <strong>Vali Vijelie</strong> și alții. În plus, faptul că-și face apariția într-o perioadă în care <span style="color:#FFE000;">manelele</span> nu sunt în lumina reflectoarelor nu-l ajută.</p>
 
 <br><p>2009, însă, e anul în care Florin Salam are expunere la televizor, pentru că o tragedie din familia sa - <span style="color:#e6bb00;">moartea soției</span> - devine subiect de tabloid și e un subiect care atrage atenția și televiziunilor de știri.</p>
 
@@ -621,7 +653,7 @@ O bună perioadă, manelele acelor vremuri au fost cântate doar la petreceri pr
 
 <br><p>„Ce a reușit el să facă atunci a fost să combine ritmul <span style="color:#e6bb00;">reggaeton</span>, acest curent sud-american, cu <span style="color:#e6bb00;">maneaua</span>, s-au pupat foarte bine, pentru că ritmurile sunt asemănătoare. Rezultă o <span style="color:#e6bb00;">manea pe steroizi, pe amfetamine</span>”, spune Schiop.</p>
 
-<br><p>„Senzația mea e că Florin Salam e primul star de <span style="color:#e6bb00;">manele</span> din România. <span style="color:#e6bb00;">Manelele</span> după el sună cu totul altfel decât înainte de apariția lui” - Adi Schiop.</p>
+<br><p>„Senzația mea e că Florin Salam e primul star de <span style="color:#e6bb00;">manele</span> din România. <span style="color:#e6bb00;">Manelele</span>, după el, sună cu totul altfel decât înainte de apariția lui”, crede <strong>Adi Schiop.</strong></p>
         </div>
         <div class="chapter-container" id="chapter-4">
             <h2 style="color:#0099C0;">Pandemia și trapanelele</h2>
@@ -637,9 +669,9 @@ O bună perioadă, manelele acelor vremuri au fost cântate doar la petreceri pr
 
 <br><p>„Au apărut noi label-uri, precum <strong>Manele Mentolate</strong>, care gândesc întregul concept, clipurile sunt mult mai lucrate, piesele sună mai cool, au avut colaborări cu nume mari din showbiz-ul pop, precum  <strong>Alex Velea</strong>”, afirmă Schiop.</p>
 
-<br><p>Succesul pe internet, chiar dacă a venit mai târziu, a venit fix la momentul oportun.</p>
+<br><p>Succesul pe internet, chiar dacă a apărut mai târziu, a venit fix la momentul oportun.</p>
 
-<br><p>"Un rol important în procesul acesta l-a avut, cu siguranță, <span style="color:#0099C0;">evoluția tehnologică</span>. Media clasică (radio și TV cu precădere) s-a erijat multă vreme în rolul de gardian sau paznic al culturii, însă în ultima perioadă a pierdut lupta pentru supremația culturală cu <span style="color:#0099C0;">rețelele sociale</span> și <span style="color:#0099C0;">platformele de streaming</span>. Pe YouTube sau Spotify, maneaua este (cu scuzele de rigoare pentru gluma previzibilă) rege. Iar cvasi-ubicuitatea manelei, atât în spațiul privat cât și în cel public, indică o mai largă acceptare a acesteia și o depășire a clivajelor de acum câteva decenii" - <strong>Radu Uszkai.</strong></p>
+<br><p>"Un rol important în procesul acesta l-a avut, cu siguranță, <span style="color:#0099C0;">evoluția tehnologică</span>. Media clasică (radio și TV cu precădere) s-a erijat multă vreme în rolul de gardian sau paznic al culturii, însă în ultima perioadă a pierdut lupta pentru supremația culturală cu <span style="color:#0099C0;">rețelele sociale</span> și <span style="color:#0099C0;">platformele de streaming</span>. Pe YouTube sau Spotify, maneaua este (cu scuzele de rigoare pentru gluma previzibilă) rege. Iar cvasi-ubicuitatea manelei, atât în spațiul privat, cât și în cel public, indică o mai largă acceptare a acesteia și o depășire a clivajelor de acum câteva decenii", crede și <strong>Radu Uszkai.</strong></p>
         </div>
         <div class="chapter-container" id="chapter-4-1">
             <h3 style="color:#D681E2;">Maneaua și drogurile</h3>
@@ -667,11 +699,12 @@ O bună perioadă, manelele acelor vremuri au fost cântate doar la petreceri pr
 
 <br><p>Acceptate pe internet și în sfere mari din societate, <span style="color:#0099C0;">manelele</span> beneficiau și de pe urma unui scandal, cu expunere publică mare, după ce <strong>Babasha</strong> a fost invitat să cânte la concertul <strong>Coldplay</strong>, momentul iunie 2024.</p>
 
-<br><p>La prima urcare, a fost huiduit, la a doua urcare a fost aplaudat, „după ce cei care l-au huiduit și-au dat seama că nu au susținerea internetului pentru gestul lor, s-au repliat, dar au fost, la rându-le, huiduiți”, remarcă Adi Schiop.</p>
+<br><p>La prima urcare, a fost huiduit, la a doua urcare a fost aplaudat. „După ce cei care l-au huiduit și-au dat seama că nu au susținerea internetului pentru gestul lor, s-au repliat, dar au fost, la rându-le, huiduiți”, remarcă <strong>Adi Schiop.</strong></p>
 
 <br><p>A fost și, poate, primul moment vizibil în care stilul muzical a arătat că episoadele de <span style="color:#0099C0;">rasism</span> nu-l mai pot trimite înapoi în underground, ba, din contră, îl pot propulsa și mai tare.</p>
 
-<br><p>Este indubitabil că în România, la fel ca peste tot în lume de altfel, există diverse forme de <span style="color:#0099C0;">rasism</span>, fie explicit sau implicit. Ce diferă la nivel global este dimensiunea acestor atitudini și măsura în care acestea joacă un rol social-politic. Uitându-ne la anii de după Revoluție și la dezbaterea privitoare la manele de la începutul anilor 2000, cred că este dificil de scos din ecuație rolul jucat de atitudini rasiste explicite sau implicite. Istoria receptării manelei nu este sub nicio formă diferită de cea a receptării altor forme de expresie artistică ale unor minorități discriminate istoric și structural de societățile din care fac parte. Riscul, cel puțin așa cum îl văd eu în acest moment, este să privim relația indivizilor cu maneaua eminamente prin prisma unor ochelari moral-politici și să lăsăm deoparte ochelarii estetici. Nu orice atitudine estetizantă este însă una moralizatoare și nu orice replică de genul „nu ascult/nu-mi plac manelele” nu înseamnă că persoana în cauză este rasistă, fie chiar și implicit. Nu tot ce facem este politic și nu tot ce ascultăm e o reflecție a ideologiei noastre căci, dacă ar fi astfel, atunci mult succes să ne explice cineva cum de există rapperi cu atitudini rasiste față de persoanele de culoare” - Radu Uszkai.</p>
+<br><p>"Este indubitabil că în România, la fel ca peste tot în lume de altfel, există diverse forme de <span style="color:#0099C0;">rasism</span>, fie explicit sau implicit. Ce diferă la nivel global este dimensiunea acestor atitudini și măsura în care acestea joacă un rol social-politic" e de părere profesorul <strong>Radu Uszkai.</strong>Radu Uszkai.</p>
+<br><p>Uitându-ne la anii de după Revoluție și la dezbaterea privitoare la manele de la începutul anilor 2000, cred că este dificil de scos din ecuație rolul jucat de atitudini rasiste explicite sau implicite. Istoria receptării manelei nu este sub nicio formă diferită de cea a receptării altor forme de expresie artistică ale unor minorități discriminate istoric și structural de societățile din care fac parte. Riscul, cel puțin așa cum îl văd eu în acest moment, este să privim relația indivizilor cu maneaua eminamente prin prisma unor ochelari moral-politici și să lăsăm deoparte ochelarii estetici. Nu orice atitudine estetizantă este însă una moralizatoare și nu orice replică de genul „nu ascult/nu-mi plac manelele” înseamnă că persoana în cauză este rasistă, fie chiar și implicit. Nu tot ce facem este politic și nu tot ce ascultăm e o reflecție a ideologiei noastre căci, dacă ar fi astfel, atunci mult succes să ne explice cineva cum de există rapperi cu atitudini rasiste față de persoanele de culoare”, spune Uszkai.</p>
 
 <br><p>2024 a fost și momentul în care artiștii de <span style="color:#0099C0;">manele</span> au simțit că pot avea un cuvânt de spus și în politică, bazându-se pe expunerea mare din online. <span style="color:#0099C0;">Tzanca Uraganu</span> a făcut <a href="https://www.youtube.com/watch?v=VxEguHraww4" style="font-weight:bold;">
         o piesă de susținere</a> pentru candidatura la prezidențiale a lui <strong>George Simion</strong>, <a href="https://www.youtube.com/watch?v=nZ-hHx9yh0s" style="font-weight:bold;">
@@ -691,16 +724,16 @@ O bună perioadă, manelele acelor vremuri au fost cântate doar la petreceri pr
 
 <br><p>„Omul e pe scenă din 2016”, își aduce aminte Adrian Schiop.</p>
 
-<br><p><strong>Mesaje din stradă</strong></p>
-<br><p>„Își face debutul alături de Dani - Prințul Banatului, cântă niște manele copiate de afară, care sunt ca „un rap franțuzesc-arăbesc, combinat cu muzica mafioților din Napoli”. Schiop afirmă că cei doi scot niște piese „de pușcărie, foarte underground cumva”, după care se ceartă, mai ales că „Prințul Banatului are o voce clonă de Guță, nu avea nicio șansă”, dar Dani Mocanu își continuă cariera.</p>
+<br><p>„Își face debutul alături de Dani - Prințul Banatului, cântă niște manele copiate de afară, care sunt ca 'un rap franțuzesc-arăbesc, combinat cu muzica mafioților din Napoli'. </p>
+<br><p>Schiop afirmă că cei doi scot niște piese „de pușcărie, foarte underground cumva”, după care se ceartă, mai ales că „Prințul Banatului are o voce clonă de Guță, nu avea nicio șansă”, dar Dani Mocanu își continuă cariera.</p>
 
-<br><p>Ceea ce a făcut <span style="color:#5F26C4;">Dani Mocanu</span> a fost, cumva, să reinterpreteze și să actualizeze <span style="color:#5F26C4;">„Muzică vagabonțească”</span> de la începutul anilor 90, dar să-i da o formă mult mai directă și explicită.</p>
+<br><p>Ceea ce a făcut <span style="color:#5F26C4;">Dani Mocanu</span> a fost, cumva, să reinterpreteze și să actualizeze <span style="color:#5F26C4;">„Muzica vagabonțească”</span> de la începutul anilor '90, dar să-i da o formă mult mai directă și explicită.</p>
 
-<br><p>„E primul manelist <span style="color:#5F26C4;">subversiv asumat</span>, până la el maneaua nu era așa, era mai mult voalată, vorbea despre rele, dar mai mult codat”.</p>
+<br><p>„E primul manelist <span style="color:#5F26C4;">subversiv asumat</span>. Până la el maneaua nu era așa, era mai mult voalată, vorbea despre rele, dar mai mult codat”.</p>
 
 <br><p>Stilul său direct și fără teamă de repercusiuni e preluat, poate indirect, de fenomenul <span style="color:#5F26C4;">trapanelelor</span>.</p>
 
-<br><p>"Ce face <span style="color:#5F26C4;">Dani Mocanu</span>? E primul vizionar, pentru că e primul manelist care își asumă scandalul, e portavocea proxeneților, e mândru că face rele", spune Adrian Schiop.</p>
+<br><p>„Ce face <span style="color:#5F26C4;">Dani Mocanu</span>? E primul vizionar, pentru că e primul manelist care își asumă scandalul, e portavocea proxeneților, e mândru că face rele", spune Adrian Schiop.</p>
 
 <br><p>Cel mai subversiv clip de manele - <a href="https://www.youtube.com/watch?v=as7370nWa6Q" style="font-weight:bold;">
         ăsta e.</a> Regie în stilul Sergiu Nicolaescu, dar închinat fraților Corduneanu.</p>
@@ -709,7 +742,7 @@ O bună perioadă, manelele acelor vremuri au fost cântate doar la petreceri pr
 
 <br><p>De altfel, această asumare i-a adus și câteva dosare penale și a primit și o condamnare, în primă instanță, de 6 ani și 5 luni.</p>
 
-<br><p>Când scriu aceste rânduri, <span style="color:#5F26C4;">Dani Mocanu</span> are 3 piese în top 10 în Tzancă și epoca YouTube, cu niște subiecte ușor de intuit. Judecând strict în termeni morali, popularitatea acestuia nu poate să nu ridice niște semne de întrebare legitime. Sigur că de cele mai multe ori trebuie să separăm arta de artist, însă atunci când o persoană condamnată pentru proxenetism glorifică, în muzica sa, proxenetismul sau putinismul, poate că o întoarcere la manelele old school ar fi dezirabilă - <strong>Radu Uszkai.</strong></p>
+<br><p>„Când scriu aceste rânduri, <span style="color:#5F26C4;">Dani Mocanu</span> are 3 piese în top 10 în Tzancă și epoca YouTube, cu niște subiecte ușor de intuit. Judecând strict în termeni morali, popularitatea acestuia nu poate să nu ridice niște semne de întrebare legitime. Sigur că de cele mai multe ori trebuie să separăm arta de artist, însă atunci când o persoană condamnată pentru proxenetism glorifică, în muzica sa, proxenetismul sau putinismul, poate că o întoarcere la manelele old school ar fi dezirabilă”, crede <strong>Radu Uszkai.</strong></p>
 
         </div>
         <div class="chapter-container" id="chapter-5-1">
@@ -730,7 +763,7 @@ O bună perioadă, manelele acelor vremuri au fost cântate doar la petreceri pr
 
 <br><p>Tinerii Generației Z nu mai au nicio problemă în a recunoaște că ascultă <span style="color:#FF7D9D;">manele</span>, revelioanele marilor televiziuni ca Protv și Antena 1 i-au redescoperit pe artiștii vechi și noi, iar cluburile de hipsteri din orașele mari nu se feresc deloc să pună <span style="color:#FF7D9D;">manele</span> la petreceri.</p>
 
-<br><p>"Pentru persoanele din Gen Z disputa cu privire la <span style="color:#FF7D9D;">manele</span> începe să semene foarte mult cu conflictul dintre rockeri și depeșari din anii '90, adică a devenit doar o nouă pagină din istoria culturală recentă a României de tranziție. Ce s-a întâmplat între timp? Cu siguranță că un rol major l-a jucat schimbarea patternului de consum cultural: când nu mai depinzi de radio sau TV pentru modelarea preferințelor muzicale și tot ce asculți se aude dintr-un device conectat non-stop la internet și platforme sociale, comunitățile și bulele din care ajungi să faci parte (comunități lipsite deseori de vreo figură de autoritate estetică clasică) joacă un rol cheie. "Într-un sens macro, însă, chiar cultura s-a schimbat. Identitatea muzicală este acum semnificativ mai fluidă, cu precădere în rândul celor din Gen Z. Nu te mai faci vinovat acum de vreo contradicție performativă dacă asculți, concomitent, metal, trap și <span style="color:#FF7D9D;">manele</span>. În post-modernism, identitatea noastră muzicală a devenit una post-ironică" - <strong>Radu Uszkai.</strong></p>
+<br><p>„Pentru persoanele din Gen Z, disputa cu privire la <span style="color:#FF7D9D;">manele</span> începe să semene foarte mult cu conflictul dintre rockeri și depeșari din anii '90, adică a devenit doar o nouă pagină din istoria culturală recentă a României de tranziție.” „Ce s-a întâmplat între timp? Cu siguranță că un rol major l-a jucat schimbarea patternului de consum cultural: când nu mai depinzi de radio sau TV pentru modelarea preferințelor muzicale și tot ce asculți se aude dintr-un device conectat non-stop la internet și platforme sociale, comunitățile și bulele din care ajungi să faci parte (comunități lipsite deseori de vreo figură de autoritate estetică clasică) joacă un rol cheie. Într-un sens macro, însă, chiar cultura s-a schimbat. Identitatea muzicală este acum semnificativ mai fluidă, cu precădere în rândul celor din Gen Z. Nu te mai faci vinovat acum de vreo contradicție performativă dacă asculți, concomitent, metal, trap și <span style="color:#FF7D9D;">manele</span>. În post-modernism, identitatea noastră muzicală a devenit una post-ironică", mai spune <strong>Radu Uszkai.</strong></p>
 
 <br><p>Există, totuși, o anumită împărțire a fanilor. <span style="color:#FF7D9D;">Tzancă Uraganu</span> sau <span style="color:#FF7D9D;">Bogdan de la Ploiești</span> sunt vedete pe YouTube, dar, după cum punctează <strong>Adi Schiop,</strong> e posibil ca „<span style="color:#FF7D9D;">Florin Salam</span> să facă mai mulți bani decât Tzancă”, tocmai pentru că primul e preferat la petrecerile părinților (interlopilor), iar cel de-al doilea e, mai degrabă, preferatul copiilor lor.</p>
 
@@ -754,6 +787,16 @@ O bună perioadă, manelele acelor vremuri au fost cântate doar la petreceri pr
     <div id="chart-tooltip"></div>
 
 <script>
+
+function setVh() {
+  document.documentElement.style.setProperty(
+    '--vh',
+    `${window.innerHeight * 0.01}px`
+  );
+}
+window.addEventListener('load',  setVh);
+window.addEventListener('resize', setVh);
+
 document.addEventListener('DOMContentLoaded', function() {
     
     const lyricsContainer = document.getElementById('lyrics-container');
@@ -898,7 +941,7 @@ document.addEventListener('DOMContentLoaded', function() {
             { 
                 id: 6, name: 'Maneaua, în 2025', color: '#FF7D9D', mp3Src: 'song6.mp3', diskSrc: 'disk6.png', headSrc: 'head6.png', scrollTarget: '#chapter-6', 
                 lyrics: [
-                    { time: 0.5, text: "Tu asculți Lana del Rey" }, { time: 3.0, text: "Eu manea cu frații mei" }, { time: 5.5, text: "Tu prin state vrei să ajungi" }, { time: 8.0, text: "Eu am sejur doar la turci" }, { time: 11.0, text: "M-a-nnebunit emoloaica" }, { time: 12.5, text: "Cică nu-l dansează ea pe Dan Armeanca" }, { time: 15.5, text: "Mi-a făcut ditai criza" }, { time: 18.0, text: "Că nu știu cine-i Sevdaliza" }, { time: 21.0, text: "Lana, la la Lana, la Lana del Rey" }, { time: 23.0, text: "Ascult iubirea mea de dragul tău ce vrei" }, { time: 26.0, text: "Minimale, la rave mă duc" }, { time: 29.0, text: "Dacă așa te seduc." }, { time: 31.0, text: "Lana, la la Lana, la Lana del Rey" }, { time: 33.0, text: "Ascult iubirea mea de dragul tău ce vrei" }, { time: 36.0, text: "Minimale, la rave mă duc" }, { time: 39.0, text: "Dacă așa te seduc." }
+                    { time: 0.5, text: "Tu asculți Lana del Rey" }, { time: 3.0, text: "Eu manea cu frații mei" }, { time: 5.5, text: "Tu prin State vrei să ajungi" }, { time: 8.0, text: "Eu am sejur doar la turci" }, { time: 11.0, text: "M-a-nnebunit emoloaica" }, { time: 12.5, text: "Cică nu-l dansează ea pe Dan Armeanca" }, { time: 15.5, text: "Mi-a făcut ditai criza" }, { time: 18.0, text: "Că nu știu cine-i Sevdaliza" }, { time: 21.0, text: "Lana, la la Lana, la Lana del Rey" }, { time: 23.0, text: "Ascult iubirea mea de dragul tău ce vrei" }, { time: 26.0, text: "Minimale, la rave mă duc" }, { time: 29.0, text: "Dacă așa te seduc." }, { time: 31.0, text: "Lana, la la Lana, la Lana del Rey" }, { time: 33.0, text: "Ascult iubirea mea de dragul tău ce vrei" }, { time: 36.0, text: "Minimale, la rave mă duc" }, { time: 39.0, text: "Dacă așa te seduc." }
                 ]
             }
         ]
@@ -987,17 +1030,14 @@ document.addEventListener('DOMContentLoaded', function() {
                         .style('top', (event.pageY - 15) + 'px');
         })
         .on("mouseout", function() {
-            // Only hide the tooltip if it's showing the chapter name
             if (activeTooltipButtonData) return;
             chartTooltip.classed('is-visible', false);
         });
 
     segmentGroups.append('path')
         .attr('d', arcGen)
-        .attr('data-original-d', arcGen)
         .attr('fill', d => d.children ? d.data.color : (d.parent.data.color || d.data.color))
         .attr('fill-opacity', d => d.depth === 1 ? 1.0 : 0.5)
-        
         .on('click', handleSegmentClick);
 
     
@@ -1094,7 +1134,6 @@ document.addEventListener('DOMContentLoaded', function() {
         
         if (isSame && !isPlaying) {
             audioElement.play();
-            
             showTooltipButton(d, event);
             controlsContainer.classList.add('is-visible');
             playerSection.classList.add('is-active');
@@ -1107,9 +1146,9 @@ document.addEventListener('DOMContentLoaded', function() {
         audioElement.loop = true;
 
         if (activePathElement) stopVisualization();
-        hideTooltipButton(); // Hide any previous button
+        hideTooltipButton();
 
-        activePathElement = event.currentTarget.querySelector('path');
+        activePathElement = this.querySelector('path');
         activeSegmentData = d;
 
         diskImageElement.src = chapter.diskSrc;
@@ -1121,7 +1160,6 @@ document.addEventListener('DOMContentLoaded', function() {
         lyricLineEl.innerHTML = '';
         
         audioElement.play();
-        
         
         showTooltipButton(d, event); 
         controlsContainer.classList.add('is-visible');
@@ -1148,6 +1186,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         hideBubbleAnimation();
         hideTooltipButton(); 
+        playerSection.classList.remove('is-active');
     });
 
     audioElement.addEventListener('ended',()=>{
@@ -1211,28 +1250,36 @@ document.addEventListener('DOMContentLoaded', function() {
         activeSegmentData = d;
         visualize();
     }
+    
     function stopVisualization() {
         diskContainer.classList.remove('is-playing');
-        if (animationId) cancelAnimationFrame(animationId);
+        if (animationId) {
+            cancelAnimationFrame(animationId);
+            animationId = null;
+        }
         if (activePathElement) {
-            const orig = d3.select(activePathElement).attr('data-original-d');
-            d3.select(activePathElement).attr('d', orig);
+            d3.select(activePathElement).style('transform', 'scale(1)');
         }
     }
+    
     function visualize() {
-        if (!activePathElement || audioElement.paused) return stopVisualization();
+        if (!activePathElement || audioElement.paused) {
+            if (activePathElement) {
+                d3.select(activePathElement).style('transform', 'scale(1)');
+            }
+            return stopVisualization();
+        }
+
         analyser.getByteFrequencyData(dataArray);
         const avg = dataArray.reduce((a, b) => a + b, 0) / dataArray.length;
-        const amp = (avg / 128) * 15;
-        const d = activeSegmentData;
-        const pulseArc = d3.arc()
-            .startAngle(d.x0).endAngle(d.x1)
-            .padAngle(0.01).padRadius(innerRingInnerRadius)
-            .innerRadius(d.depth > 1 ? innerRingInnerRadius - amp/2 : outerRadius - ringThickness - amp/2)
-            .outerRadius(d.depth > 1 ? innerRingOuterRadius + amp : outerRadius + amp);
-        d3.select(activePathElement).attr('d', pulseArc(d));
+        
+        const scaleFactor = 1 + (avg / 128) * 0.1; 
+
+        d3.select(activePathElement).style('transform', `scale(${scaleFactor})`);
+        
         animationId = requestAnimationFrame(visualize);
     }
+
     function updateKaraoke() {
         if (!currentChapterLyrics.length) return;
         currentChapterLyrics.forEach((L, i) => ensureWords(L, currentChapterLyrics[i + 1]));
@@ -1276,8 +1323,16 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         const color = colorNode.data.color;
         if (!words.length) { hideBubbleAnimation(); return; }
+
+        const isMobile = window.innerWidth <= 600;
+        const minSize = isMobile ? 25 : 40;
+        const maxSize = isMobile ? 90 : 160;
+        const maxLeft = isMobile ? 80 : 92;
+
+        const scale = d3.scaleSqrt().domain([0, 100]).range([minSize, maxSize]);
+        
         bubbleContainer.html('');
-        const scale = d3.scaleSqrt().domain([0, 100]).range([30, 160]);
+        
         bubbleContainer.selectAll('.word-bubble')
             .data(words.filter(w => w.count > 0)).enter()
             .append('div').attr('class', 'word-bubble')
@@ -1287,13 +1342,14 @@ document.addEventListener('DOMContentLoaded', function() {
             .style('background-color', () => {
                 const c = d3.color(color || '#222'); c.opacity = 0.65; return c;
             })
-            .style('left', () => `${Math.random() * 95}%`)
+            .style('left', () => `${Math.random() * maxLeft}%`)
             .style('animation-duration', () => `${12 + Math.random() * 8}s`)
             .style('animation-delay', () => `${Math.random() * 10}s`)
             .text(d => d.text);
+            
         bubbleContainer.classed('is-active', true);
     }
-
+    
     function hideBubbleAnimation() {
         bubbleContainer.classed('is-active', false);
         setTimeout(() => bubbleContainer.html(''), 500);
@@ -1305,11 +1361,11 @@ document.addEventListener('DOMContentLoaded', function() {
         if (e.target.closest('#controls-container')) return;
         if (e.target.closest('#chapter-popup')) return;
         if (e.target.closest('#intro-button')) return;
-        // NEW: Also ignore clicks on our new dynamic button
         if (e.target.closest('#chart-tooltip.is-button')) return;
+        // Also check for the lyrics container since it's now interactive and separate
+        if(e.target.closest('#lyrics-container')) return;
 
         if (!audioElement.paused) audioElement.pause();
-        
         
         controlsContainer.classList.remove('is-visible');
         diskImageElement.src = 'disk0.png';
